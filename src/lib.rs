@@ -1,0 +1,108 @@
+extern crate libc;
+use std::io;
+use std::ffi;
+
+pub enum HouseCode {
+    A = 0x06 << 4,
+    B = 0x07 << 4,
+    C = 0x04 << 4,
+    D = 0x05 << 4,
+    E = 0x08 << 4,
+    F = 0x09 << 4,
+    G = 0x0a << 4,
+    H = 0x0b << 4,
+    I = 0x0e << 4,
+    J = 0x0f << 4,
+    K = 0x0c << 4,
+    L = 0x0d << 4,
+    M = 0x00 << 4,
+    N = 0x01 << 4,
+    O = 0x02 << 4,
+    P = 0x03 << 4,
+}
+
+pub enum Device {
+    Device1 = 0x0000,
+    Device2 = 0x0010,
+    Device3 = 0x0008,
+    Device4 = 0x0018,
+    Device5 = 0x0040,
+    Device6 = 0x0050,
+    Device7 = 0x0048,
+    Device8 = 0x0058,
+    Device9 = 0x0400,
+    Device10 = 0x0410,
+    Device11 = 0x0408,
+    Device12 = 0x0418,
+    Device13 = 0x0440,
+    Device14 = 0x0450,
+    Device15 = 0x0448,
+    Device16 = 0x0458,
+}
+
+
+pub enum Command {
+    Off = 0x00,
+    On = 0x20,
+    Dim = 0x98,
+    Bright = 0x88,
+    AllOff = 0x80,
+    AllOn = 0x91,
+    LampsOff = 0x84,
+    LampsOn = 0x94,
+}
+
+pub type CM17ACommand = [u8; 5];
+
+pub fn make_command(house: HouseCode, device: Device, command: Command) -> CM17ACommand {
+    let dev = device as u16;
+    let device_high = (dev >> 8) as u8;
+    let device_low = dev as u8;
+    [
+        0xd5, // lol magic number
+        0xaa, // lol more magic
+        house as u8 | device_high,
+        device_low | command as u8,
+        0xad, // lol yet more magic
+    ]
+}
+
+pub fn open_port(portname: ffi::CString) -> io::Result<libc::c_int> {
+    let port = portname.as_ptr();
+    match unsafe { libc::open(port, libc::O_RDONLY | libc::O_NONBLOCK) } {
+        -1 => Err(io::Error::last_os_error()),
+        x => Ok(x)
+    }
+}
+
+pub fn send_command(cmd: CM17ACommand, fd: libc::c_int) -> io::Result<()> {
+    let serial_state: libc::c_int = 0;
+    let a = unsafe { libc::ioctl(fd, libc::TIOCMGET, &serial_state) };
+    if a == -1 {
+        Err(io::Error::last_os_error())
+    } else {
+        Ok(())
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use *;
+
+    #[test]
+    fn test_make_command() {
+        let expected1: CM17ACommand = [0xd5, 0xaa, 0x94, 0x00, 0xad];
+        let actual1 = make_command(HouseCode::F, Device::Device9, Command::Off);
+        assert_eq!(actual1, expected1)
+    }
+
+    #[test]
+    fn test_send_command() {
+        let command: CM17ACommand = [0xd5, 0xaa, 0x94, 0x00, 0xad];
+        let port = open_port(
+            ffi::CString::new("/dev/ttyS0").unwrap()
+        ).unwrap();
+        send_command(command, port).unwrap()
+    }
+}
