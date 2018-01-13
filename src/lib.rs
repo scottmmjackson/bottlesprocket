@@ -57,12 +57,14 @@ pub fn make_command(house: HouseCode, device: Device, command: Command) -> CM17A
     let dev = device as u16;
     let device_high = (dev >> 8) as u8;
     let device_low = dev as u8;
+    let cmd = command as u8;
+    println!("device: {:X}, command: {:X}", dev, cmd);
     [
         // http://kbase.x10.com/wiki/CM17A_Protocol
         0xd5, // HEADER
         0xaa, // HEADER
         house as u8 | device_high,
-        device_low | command as u8,
+        device_low | cmd,
         0xad, // FOOTER
     ]
 }
