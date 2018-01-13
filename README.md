@@ -18,8 +18,6 @@ The wall-warts for appliances are called "modules" and the one that sends the si
 The CM17A is a tiny brick that sits in your RS-232 (old school) serial port, and sends a command sequence wirelessly
 to the transceiver, which then sends the command through your power lines.
 
-In this wonderfully convoluted way, you can
-
 ## Installing
 
 ### Requirements
