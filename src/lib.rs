@@ -116,13 +116,8 @@ fn reset(fd: libc::c_int) -> io::Result<()> {
 }
 
 fn standby_wait() {
-    let standby_delay = time::Duration::new(0, 1400000);
+    let standby_delay = time::Duration::new(0, 350000);
     wait(standby_delay);
-}
-
-fn command_wait() {
-    let command_delay = time::Duration::new(0, 350000000);
-    wait(command_delay)
 }
 
 fn wait(dur: time::Duration) {
@@ -132,7 +127,6 @@ fn wait(dur: time::Duration) {
 pub fn send_command(cmd: CM17ACommand, fd: libc::c_int) -> io::Result<()> {
     reset(fd)?;
     standby(fd)?;
-    command_wait();
     for byte in cmd.into_iter() {
         for shift in 1..8 as u8 {
             match (byte << shift) & 0x1 {
@@ -140,7 +134,7 @@ pub fn send_command(cmd: CM17ACommand, fd: libc::c_int) -> io::Result<()> {
                 0 => logical0(fd)?,
                 x => panic!(format!("The developer did something wrong. Byte {} shifted {} & 0x1 is {}", byte, shift, x))
             }
-            command_wait();
+            standby(fd)?;
         }
     }
     reset(fd)?;
