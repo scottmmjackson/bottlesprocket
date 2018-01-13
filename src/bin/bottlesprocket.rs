@@ -1,4 +1,6 @@
 extern crate clap;
+extern crate env_logger;
+#[macro_use] extern crate log;
 extern crate bottlesprocket;
 
 use bottlesprocket::make_command;
@@ -70,6 +72,7 @@ fn main() {
             ])
         )
         .get_matches();
+    env_logger::init().unwrap();
     let command: CM17ACommand = make_command(
         match matches.value_of("house") {
             Some("A") => HouseCode::A,
@@ -121,7 +124,14 @@ fn main() {
             _ => panic!(),
         },
     );
-
+    debug!(
+        "Command: {:X} {:X} {:X} {:X} {:X}",
+        command[0],
+        command[1],
+        command[2],
+        command[3],
+        command[4]
+    );
     let portname = std::ffi::CString::new(
         matches.value_of("serial").unwrap()
     ).unwrap();
@@ -130,17 +140,10 @@ fn main() {
             println!("Can't open port: {}", e);
             std::process::exit(1)
         });
-    println!(
-        "Command: {:X} {:X} {:X} {:X} {:X}",
-        command[0],
-        command[1],
-        command[2],
-        command[3],
-        command[4]
-    );
     send_command(command, port)
         .unwrap_or_else(|e| {
             println!("Error sending command: {}", e);
             std::process::exit(1)
         });
+    println!("Command was successfully sent to CM17A");
 }

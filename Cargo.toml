@@ -6,3 +6,5 @@ authors = ["Scott Jackson <scottmmjackson@gmail.com>"]
 [dependencies]
 libc = "*"
 clap = "*"
+env_logger = "*"
+log = "*"

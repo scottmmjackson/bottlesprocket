@@ -1,4 +1,5 @@
 extern crate libc;
+
 use std::{io, ffi, thread, time};
 
 pub enum HouseCode {
@@ -88,7 +89,7 @@ fn standby(fd: libc::c_int) -> io::Result<()> {
     let out = libc::TIOCM_RTS | libc::TIOCM_DTR; // RTS 1 DTR 1 = standby signal
     let res = unsafe { libc::ioctl(fd, libc::TIOCMBIS, &out) };
     if res == -1 {
-        return Err(io::Error::last_os_error())
+        return Err(io::Error::last_os_error());
     }
     standby_wait();
     Ok(())
@@ -96,9 +97,9 @@ fn standby(fd: libc::c_int) -> io::Result<()> {
 
 fn logical1(fd: libc::c_int) -> io::Result<()> {
     let out = libc::TIOCM_DTR;
-    let res = unsafe { libc::ioctl(fd, libc::TIOCMBIC, &out )};
+    let res = unsafe { libc::ioctl(fd, libc::TIOCMBIC, &out) };
     if res == -1 {
-        return Err(io::Error::last_os_error())
+        return Err(io::Error::last_os_error());
     }
     standby_wait();
     Ok(())
@@ -106,9 +107,9 @@ fn logical1(fd: libc::c_int) -> io::Result<()> {
 
 fn logical0(fd: libc::c_int) -> io::Result<()> {
     let out = libc::TIOCM_RTS;
-    let res = unsafe { libc::ioctl(fd, libc::TIOCMBIC, &out )};
+    let res = unsafe { libc::ioctl(fd, libc::TIOCMBIC, &out) };
     if res == -1 {
-        return Err(io::Error::last_os_error())
+        return Err(io::Error::last_os_error());
     }
     standby_wait();
     Ok(())
@@ -116,9 +117,9 @@ fn logical0(fd: libc::c_int) -> io::Result<()> {
 
 fn reset(fd: libc::c_int) -> io::Result<()> {
     let out: libc::c_int = 0x000;
-    let res = unsafe { libc::ioctl(fd, libc::TIOCMBIS, &out )};
+    let res = unsafe { libc::ioctl(fd, libc::TIOCMBIS, &out) };
     if res == -1 {
-        return Err(io::Error::last_os_error())
+        return Err(io::Error::last_os_error());
     }
     standby_wait();
     Ok(())
@@ -151,7 +152,6 @@ pub fn send_command(cmd: CM17ACommand, fd: libc::c_int) -> io::Result<()> {
             }
             standby(fd)?;
         }
-        println!();
     }
     command_wait();
     reset(fd)?;
@@ -177,15 +177,18 @@ mod tests {
         let expected4: CM17ACommand = [0xd5, 0xaa, 0x20, 0x84, 0xad];
         let actual4 = make_command(HouseCode::O, None, Command::LampsOff);
         assert_eq!(actual4, expected4);
+        let expected5: CM17ACommand = [0xd5, 0xaa, 0x50, 0x98, 0xad];
+        let actual5 = make_command(HouseCode::D, None, Command::Dim);
+        assert_eq!(actual5, expected5)
     }
 
     #[test]
-    #[ignore] // requires root and a serial port with a firecracker
+    #[ignore] // requires root and a serial port with a firecracker, `cargo test -- --ignored`
     fn test_send_command() {
         let command: CM17ACommand = [0xd5, 0xaa, 0x94, 0x00, 0xad];
         let port = open_port(
             ffi::CString::new("/dev/ttyS0").unwrap()
-        ).unwrap();
-        send_command(command, port).unwrap()
+        ).unwrap(); // panic on unwrap: permission denied (if not root)
+        send_command(command, port).unwrap() // panic on unwrap: I/O error (if no cm17a)
     }
 }
