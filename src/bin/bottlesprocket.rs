@@ -7,6 +7,7 @@ use bottlesprocket::Device;
 use bottlesprocket::Command;
 use bottlesprocket::send_command;
 use bottlesprocket::open_port;
+use bottlesprocket::CM17ACommand;
 
 fn main() {
     let matches = clap::App::new("bottlesprocket")
@@ -61,7 +62,7 @@ fn main() {
             LAMPS_OFF - Turn off all lamps at the specified house code\n")
         )
         .get_matches();
-    let command = make_command(
+    let command: CM17ACommand = make_command(
         match matches.value_of("house") {
             Some("A") => HouseCode::A,
             Some("B") => HouseCode::B,
@@ -120,7 +121,14 @@ fn main() {
             println!("Can't open port: {}", e);
             std::process::exit(1)
         });
-    println!("Command: {} {} {} {} {}", command[0], command[1], command[2], command[3], command[4]);
+    println!(
+        "Command: {:X} {:X} {:X} {:X} {:X}",
+        command[0],
+        command[1],
+        command[2],
+        command[3],
+        command[4]
+    );
     send_command(command, port)
         .unwrap_or_else(|e| {
             println!("Error sending command: {}", e);
