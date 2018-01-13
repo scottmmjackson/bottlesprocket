@@ -95,8 +95,8 @@ fn standby(fd: libc::c_int) -> io::Result<()> {
 }
 
 fn logical1(fd: libc::c_int) -> io::Result<()> {
-    let out = libc::TIOCM_RTS;
-    let res = unsafe { libc::ioctl(fd, libc::TIOCMBIS, &out )};
+    let out = libc::TIOCM_DTR;
+    let res = unsafe { libc::ioctl(fd, libc::TIOCMBIC, &out )};
     if res == -1 {
         return Err(io::Error::last_os_error())
     }
@@ -105,8 +105,8 @@ fn logical1(fd: libc::c_int) -> io::Result<()> {
 }
 
 fn logical0(fd: libc::c_int) -> io::Result<()> {
-    let out = libc::TIOCM_DTR;
-    let res = unsafe { libc::ioctl(fd, libc::TIOCMBIS, &out )};
+    let out = libc::TIOCM_RTS;
+    let res = unsafe { libc::ioctl(fd, libc::TIOCMBIC, &out )};
     if res == -1 {
         return Err(io::Error::last_os_error())
     }
