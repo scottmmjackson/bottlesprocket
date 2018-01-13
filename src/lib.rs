@@ -39,10 +39,9 @@ pub enum Device {
     Device16 = 0x0458,
 }
 
-
 pub enum Command {
-    Off = 0x00,
-    On = 0x20,
+    On = 0x00,
+    Off = 0x20,
     Dim = 0x98,
     Bright = 0x88,
     AllOff = 0x80,
@@ -53,8 +52,17 @@ pub enum Command {
 
 pub type CM17ACommand = [u8; 5];
 
-pub fn make_command(house: HouseCode, device: Device, command: Command) -> CM17ACommand {
-    let dev = device as u16;
+pub fn make_command(house: HouseCode, device: Option<Device>, command: Command) -> CM17ACommand {
+    if device.is_none() && match command {
+        Command::On | Command::Off => true,
+        _ => false
+    } {
+        panic!("Can't send a device-specific command to a non-existent device");
+    }
+    let dev = match command {
+        Command::On | Command::Off => device.unwrap() as u16,
+        _ => 0 as u16
+    };
     let device_high = (dev >> 8) as u8;
     let device_low = dev as u8;
     let cmd = command as u8;
@@ -155,8 +163,17 @@ mod tests {
     #[test]
     fn test_make_command() {
         let expected1: CM17ACommand = [0xd5, 0xaa, 0x94, 0x00, 0xad];
-        let actual1 = make_command(HouseCode::F, Device::Device9, Command::Off);
-        assert_eq!(actual1, expected1)
+        let actual1 = make_command(HouseCode::F, Some(Device::Device9), Command::On);
+        assert_eq!(actual1, expected1);
+        let expected2: CM17ACommand = [0xd5, 0xaa, 0xf0, 0x00, 0xad];
+        let actual2 = make_command(HouseCode::J, Some(Device::Device1), Command::On);
+        assert_eq!(actual2, expected2);
+        let expected3: CM17ACommand = [0xd5, 0xaa, 0x20, 0x91, 0xad];
+        let actual3 = make_command(HouseCode::O, None, Command::AllOn);
+        assert_eq!(actual3, expected3);
+        let expected4: CM17ACommand = [0xd5, 0xaa, 0x20, 0x84, 0xad];
+        let actual4 = make_command(HouseCode::O, None, Command::LampsOff);
+        assert_eq!(actual4, expected4);
     }
 
     #[test]

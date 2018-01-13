@@ -28,8 +28,8 @@ fn main() {
             .short("d")
             .long("device")
             .value_name("DEVICE")
-            .required(true)
             .help("Device index to use")
+            .long_help("Required for ON and OFF commands")
             .possible_values(&[
                 "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16"
             ])
@@ -54,12 +54,20 @@ fn main() {
             .long_help("There are eight valid commands that can be sent:\n\
             OFF - Turn the identified device off\n\
             ON - Turn the identified device on\n\
-            DIM - Dim the identified device 5%\n\
-            BRIGHT - Brighten the identified device 5%\n\
+            DIM - Send a DIM command. See Dimming below.\n\
+            BRIGHT - Send a BRIGHT command. See Dimming below.\n\
             ALL_ON - Turn on all devices at the specified house code\n\
             ALL_OFF - Turn off all devices at the specified house code\n\
             LAMPS_ON - Turn on all lamps at the specified house code\n\
-            LAMPS_OFF - Turn off all lamps at the specified house code\n")
+            LAMPS_OFF - Turn off all lamps at the specified house code\n\
+            \n\
+            Dimming: To dim devices, you must send ON to the target device and then\n\
+                DIM or BRIGHT to the target house code one time for every 5% increase\n\
+                or decrease in brightness you wish\n")
+            .requires_ifs(&[
+                ("OFF", "device"),
+                ("ON", "device"),
+            ])
         )
         .get_matches();
     let command: CM17ACommand = make_command(
@@ -83,23 +91,23 @@ fn main() {
             _ => panic!(),
         },
         match matches.value_of("device") {
-            Some("1") => Device::Device1,
-            Some("2") => Device::Device2,
-            Some("3") => Device::Device3,
-            Some("4") => Device::Device4,
-            Some("5") => Device::Device5,
-            Some("6") => Device::Device6,
-            Some("7") => Device::Device7,
-            Some("8") => Device::Device8,
-            Some("9") => Device::Device9,
-            Some("10") => Device::Device10,
-            Some("11") => Device::Device11,
-            Some("12") => Device::Device12,
-            Some("13") => Device::Device13,
-            Some("14") => Device::Device14,
-            Some("15") => Device::Device15,
-            Some("16") => Device::Device16,
-            _ => panic!(),
+            Some("1") => Some(Device::Device1),
+            Some("2") => Some(Device::Device2),
+            Some("3") => Some(Device::Device3),
+            Some("4") => Some(Device::Device4),
+            Some("5") => Some(Device::Device5),
+            Some("6") => Some(Device::Device6),
+            Some("7") => Some(Device::Device7),
+            Some("8") => Some(Device::Device8),
+            Some("9") => Some(Device::Device9),
+            Some("10") => Some(Device::Device10),
+            Some("11") => Some(Device::Device11),
+            Some("12") => Some(Device::Device12),
+            Some("13") => Some(Device::Device13),
+            Some("14") => Some(Device::Device14),
+            Some("15") => Some(Device::Device15),
+            Some("16") => Some(Device::Device16),
+            _ => None,
         },
         match matches.value_of("command") {
             Some("OFF") => Command::Off,
@@ -113,6 +121,7 @@ fn main() {
             _ => panic!(),
         },
     );
+
     let portname = std::ffi::CString::new(
         matches.value_of("serial").unwrap()
     ).unwrap();
