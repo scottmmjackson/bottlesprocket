@@ -125,7 +125,7 @@ fn reset(fd: libc::c_int) -> io::Result<()> {
 }
 
 fn standby_wait() {
-    let standby_delay = time::Duration::new(0, 600_000);
+    let standby_delay = time::Duration::new(0, 1_400_000);
     wait(standby_delay);
 }
 
