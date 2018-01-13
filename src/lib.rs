@@ -85,7 +85,6 @@ pub fn open_port(portname: ffi::CString) -> io::Result<libc::c_int> {
 }
 
 fn standby(fd: libc::c_int) -> io::Result<()> {
-    print!("S");
     let out = libc::TIOCM_RTS | libc::TIOCM_DTR; // RTS 1 DTR 1 = standby signal
     let res = unsafe { libc::ioctl(fd, libc::TIOCMBIS, &out) };
     if res == -1 {
@@ -96,7 +95,6 @@ fn standby(fd: libc::c_int) -> io::Result<()> {
 }
 
 fn logical1(fd: libc::c_int) -> io::Result<()> {
-    print!("1");
     let out = libc::TIOCM_RTS;
     let res = unsafe { libc::ioctl(fd, libc::TIOCMBIS, &out )};
     if res == -1 {
@@ -107,7 +105,6 @@ fn logical1(fd: libc::c_int) -> io::Result<()> {
 }
 
 fn logical0(fd: libc::c_int) -> io::Result<()> {
-    print!("0");
     let out = libc::TIOCM_DTR;
     let res = unsafe { libc::ioctl(fd, libc::TIOCMBIS, &out )};
     if res == -1 {
@@ -118,7 +115,6 @@ fn logical0(fd: libc::c_int) -> io::Result<()> {
 }
 
 fn reset(fd: libc::c_int) -> io::Result<()> {
-    print!("R");
     let out: libc::c_int = 0x000;
     let res = unsafe { libc::ioctl(fd, libc::TIOCMBIS, &out )};
     if res == -1 {
@@ -129,8 +125,13 @@ fn reset(fd: libc::c_int) -> io::Result<()> {
 }
 
 fn standby_wait() {
-    let standby_delay = time::Duration::new(0, 500000);
+    let standby_delay = time::Duration::new(0, 600_000);
     wait(standby_delay);
+}
+
+fn command_wait() {
+    let command_delay = time::Duration::from_millis(350); // 350 ms
+    wait(command_delay);
 }
 
 fn wait(dur: time::Duration) {
@@ -140,6 +141,7 @@ fn wait(dur: time::Duration) {
 pub fn send_command(cmd: CM17ACommand, fd: libc::c_int) -> io::Result<()> {
     reset(fd)?;
     standby(fd)?;
+    command_wait();
     for byte in cmd.into_iter() {
         for shift in 1..9 as u32 {
             match (byte.rotate_left(shift)) & 0x1 {
@@ -151,6 +153,7 @@ pub fn send_command(cmd: CM17ACommand, fd: libc::c_int) -> io::Result<()> {
         }
         println!();
     }
+    command_wait();
     reset(fd)?;
     Ok(())
 }
