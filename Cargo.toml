@@ -5,3 +5,4 @@ authors = ["Scott Jackson <scottmmjackson@gmail.com>"]
 
 [dependencies]
 libc = "*"
+clap = "*"
