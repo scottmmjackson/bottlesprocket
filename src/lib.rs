@@ -1,6 +1,5 @@
 extern crate libc;
-use std::io;
-use std::ffi;
+use std::{io, ffi, thread, time};
 
 pub enum HouseCode {
     A = 0x06 << 4,
@@ -59,11 +58,12 @@ pub fn make_command(house: HouseCode, device: Device, command: Command) -> CM17A
     let device_high = (dev >> 8) as u8;
     let device_low = dev as u8;
     [
-        0xd5, // lol magic number
-        0xaa, // lol more magic
+        // http://kbase.x10.com/wiki/CM17A_Protocol
+        0xd5, // HEADER
+        0xaa, // HEADER
         house as u8 | device_high,
         device_low | command as u8,
-        0xad, // lol yet more magic
+        0xad, // FOOTER
     ]
 }
 
@@ -75,14 +75,76 @@ pub fn open_port(portname: ffi::CString) -> io::Result<libc::c_int> {
     }
 }
 
-pub fn send_command(cmd: CM17ACommand, fd: libc::c_int) -> io::Result<()> {
-    let serial_state: libc::c_int = 0;
-    let a = unsafe { libc::ioctl(fd, libc::TIOCMGET, &serial_state) };
-    if a == -1 {
-        Err(io::Error::last_os_error())
-    } else {
-        Ok(())
+fn standby(fd: libc::c_int) -> io::Result<()> {
+    let out = libc::TIOCM_RTS | libc::TIOCM_DTR; // RTS 1 DTR 1 = standby signal
+    let res = unsafe { libc::ioctl(fd, libc::TIOCMBIS, &out) };
+    if res == -1 {
+        return Err(io::Error::last_os_error())
     }
+    standby_wait();
+    Ok(())
+}
+
+fn logical1(fd: libc::c_int) -> io::Result<()> {
+    let out = libc::TIOCM_RTS;
+    let res = unsafe { libc::ioctl(fd, libc::TIOCMBIS, &out )};
+    if res == -1 {
+        return Err(io::Error::last_os_error())
+    }
+    standby_wait();
+    Ok(())
+}
+
+fn logical0(fd: libc::c_int) -> io::Result<()> {
+    let out = libc::TIOCM_DTR;
+    let res = unsafe { libc::ioctl(fd, libc::TIOCMBIS, &out )};
+    if res == -1 {
+        return Err(io::Error::last_os_error())
+    }
+    standby_wait();
+    Ok(())
+}
+
+fn reset(fd: libc::c_int) -> io::Result<()> {
+    let out: libc::c_int = 0x000;
+    let res = unsafe { libc::ioctl(fd, libc::TIOCMBIS, &out )};
+    if res == -1 {
+        return Err(io::Error::last_os_error())
+    }
+    standby_wait();
+    Ok(())
+}
+
+fn standby_wait() {
+    let standby_delay = time::Duration::new(0, 1400000);
+    wait(standby_delay);
+}
+
+fn command_wait() {
+    let command_delay = time::Duration::new(0, 350000000);
+    wait(command_delay)
+}
+
+fn wait(dur: time::Duration) {
+    thread::sleep(dur);
+}
+
+pub fn send_command(cmd: CM17ACommand, fd: libc::c_int) -> io::Result<()> {
+    reset(fd)?;
+    standby(fd)?;
+    command_wait();
+    for byte in cmd.into_iter() {
+        for shift in 1..8 as u8 {
+            match (byte << shift) & 0x1 {
+                1 => logical1(fd)?,
+                0 => logical0(fd)?,
+                x => panic!(format!("The developer did something wrong. Byte {} shifted {} & 0x1 is {}", byte, shift, x))
+            }
+            command_wait();
+        }
+    }
+    reset(fd)?;
+    Ok(())
 }
 
 
@@ -98,6 +160,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore] // requires root and a serial port with a firecracker
     fn test_send_command() {
         let command: CM17ACommand = [0xd5, 0xaa, 0x94, 0x00, 0xad];
         let port = open_port(
