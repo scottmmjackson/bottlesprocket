@@ -58,7 +58,6 @@ pub fn make_command(house: HouseCode, device: Device, command: Command) -> CM17A
     let device_high = (dev >> 8) as u8;
     let device_low = dev as u8;
     let cmd = command as u8;
-    println!("device: {:X}, command: {:X}", dev, cmd);
     [
         // http://kbase.x10.com/wiki/CM17A_Protocol
         0xd5, // HEADER
@@ -78,6 +77,7 @@ pub fn open_port(portname: ffi::CString) -> io::Result<libc::c_int> {
 }
 
 fn standby(fd: libc::c_int) -> io::Result<()> {
+    print!("S");
     let out = libc::TIOCM_RTS | libc::TIOCM_DTR; // RTS 1 DTR 1 = standby signal
     let res = unsafe { libc::ioctl(fd, libc::TIOCMBIS, &out) };
     if res == -1 {
@@ -88,6 +88,7 @@ fn standby(fd: libc::c_int) -> io::Result<()> {
 }
 
 fn logical1(fd: libc::c_int) -> io::Result<()> {
+    print!("1");
     let out = libc::TIOCM_RTS;
     let res = unsafe { libc::ioctl(fd, libc::TIOCMBIS, &out )};
     if res == -1 {
@@ -98,6 +99,7 @@ fn logical1(fd: libc::c_int) -> io::Result<()> {
 }
 
 fn logical0(fd: libc::c_int) -> io::Result<()> {
+    print!("0");
     let out = libc::TIOCM_DTR;
     let res = unsafe { libc::ioctl(fd, libc::TIOCMBIS, &out )};
     if res == -1 {
@@ -108,6 +110,7 @@ fn logical0(fd: libc::c_int) -> io::Result<()> {
 }
 
 fn reset(fd: libc::c_int) -> io::Result<()> {
+    print!("R");
     let out: libc::c_int = 0x000;
     let res = unsafe { libc::ioctl(fd, libc::TIOCMBIS, &out )};
     if res == -1 {
@@ -138,6 +141,7 @@ pub fn send_command(cmd: CM17ACommand, fd: libc::c_int) -> io::Result<()> {
             }
             standby(fd)?;
         }
+        println!();
     }
     reset(fd)?;
     Ok(())
