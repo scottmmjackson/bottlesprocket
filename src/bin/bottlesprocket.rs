@@ -120,6 +120,7 @@ fn main() {
             println!("Can't open port: {}", e);
             std::process::exit(1)
         });
+    println!("Command: {} {} {} {} {}", command[0], command[1], command[2], command[3], command[4]);
     send_command(command, port)
         .unwrap_or_else(|e| {
             println!("Error sending command: {}", e);
