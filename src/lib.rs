@@ -133,8 +133,8 @@ pub fn send_command(cmd: CM17ACommand, fd: libc::c_int) -> io::Result<()> {
     reset(fd)?;
     standby(fd)?;
     for byte in cmd.into_iter() {
-        for shift in 1..8 as u8 {
-            match (byte << shift) & 0x1 {
+        for shift in 1..9 as u32 {
+            match (byte.rotate_left(shift)) & 0x1 {
                 1 => logical1(fd)?,
                 0 => logical0(fd)?,
                 x => panic!(format!("The developer did something wrong. Byte {} shifted {} & 0x1 is {}", byte, shift, x))
