@@ -1,7 +1,7 @@
 [package]
 name = "bottlesprocket"
 edition = "2024"
-license = "GPL-3"
+license = "GPL-3.0"
 version = "0.2.0"
 authors = ["Scott Jackson <me@scottmmjackson.com>"]
 description = "bottlesprocket is a CM17A 'Firecracker' serial port command line tool."
