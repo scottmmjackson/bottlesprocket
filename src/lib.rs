@@ -148,7 +148,7 @@ pub fn send_command(cmd: CM17ACommand, fd: libc::c_int) -> io::Result<()> {
             match (byte.rotate_left(shift)) & 0x1 {
                 1 => logical1(fd)?,
                 0 => logical0(fd)?,
-                x => panic!(format!("The developer did something wrong. Byte {} shifted {} & 0x1 is {}", byte, shift, x))
+                x => panic!("The developer did something wrong. Byte {byte} shifted {shift} & 0x1 is {x}")
             }
             standby(fd)?;
         }
@@ -161,7 +161,7 @@ pub fn send_command(cmd: CM17ACommand, fd: libc::c_int) -> io::Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use *;
+    use crate::*;
 
     #[test]
     fn test_make_command() {

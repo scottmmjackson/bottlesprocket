@@ -1,10 +1,12 @@
 [package]
 name = "bottlesprocket"
-version = "0.1.0"
-authors = ["Scott Jackson <scottmmjackson@gmail.com>"]
+edition = "2024"
+version = "0.2.0"
+authors = ["Scott Jackson <me@scottmmjackson.com>"]
+description = "bottlesprocket is a CM17A 'Firecracker' serial port command line tool."
 
 [dependencies]
-libc = "*"
-clap = "*"
-env_logger = "*"
-log = "*"
+libc = "1.0.0-alpha.1"
+clap = "4.5.38"
+env_logger = "0.11.8"
+log = "0.4.27"
